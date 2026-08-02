@@ -1,14 +1,14 @@
 from collections.abc import Sequence
 
-from waveframe.context import WaveFrameContext
 from waveframe.protocol.frame import Frame
+from waveframe.state import State
 from waveframe.types import FrameMiddleware, FrameNext
 
 
 def build_frame_pipeline(
     middleware: Sequence[FrameMiddleware],
     frame: Frame,
-    context: WaveFrameContext,
+    state: State,
     endpoint: FrameNext,
 ) -> FrameNext:
     call_next = endpoint
@@ -19,7 +19,7 @@ def build_frame_pipeline(
             current_middleware: FrameMiddleware = current_middleware,
             next_handler: FrameNext = next_handler,
         ) -> Frame | None:
-            return await current_middleware(frame, context, next_handler)
+            return await current_middleware(frame, state, next_handler)
 
         call_next = call_current
     return call_next

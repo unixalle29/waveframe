@@ -53,8 +53,8 @@ from waveframe import (
     Frame,
     FrameSender,
     FromDishka,
+    State,
     WaveFrame,
-    WaveFrameContext,
     WaveFrameProvider,
     WaveFrameRouter,
     inject,
@@ -112,11 +112,11 @@ async def echo(data: bytes) -> Frame:
     return Frame(route="echo", payload=data)
 ```
 
-Context only:
+State only:
 
 ```python
 @app.on("session")
-async def session(state: WaveFrameContext) -> Frame:
+async def session(state: State) -> Frame:
     user_id = state.get("user_id", str)
     return Frame(route="session", payload=user_id.encode())
 ```
@@ -135,10 +135,10 @@ All supported values:
 @app.on("authenticate")
 async def authenticate(
     body: bytes,
-    session: WaveFrameContext,
+    state: State,
     output: FrameSender,
 ) -> Frame:
-    session.set("user_id", body.decode())
+    state.set("user_id", body.decode())
     await output.send(Frame(route="progress", payload=b"working"))
     return Frame(route="authenticated", payload=b"")
 ```
@@ -147,7 +147,7 @@ Supported handler parameters:
 
 ```text
 payload: bytes
-context: WaveFrameContext
+state: State
 sender: FrameSender
 ```
 
@@ -195,22 +195,28 @@ async def process_audio(payload: bytes) -> Frame:
 app.include_router(audio_router)
 ```
 
-## Context
+## State
 
-`WaveFrameContext` is created once per connection and is shared by all frames received on that connection.
+`app.state` lives for the whole application. Each incoming frame receives a new `State` copied from `app.state`.
 
 ```python
-@app.on("login")
-async def login(payload: bytes, context: WaveFrameContext) -> Frame:
-    context.set("user_id", payload.decode())
-    return Frame(route="ok", payload=b"")
-
-
-@app.on("profile")
-async def profile(context: WaveFrameContext) -> Frame:
-    user_id = context.get("user_id", str)
-    return Frame(route="profile", payload=user_id.encode())
+@asynccontextmanager
+async def lifespan(app: WaveFrame) -> AsyncIterator[None]:
+    app.state.set("service", await create_service())
+    yield
+    await app.state.get("service", Service).close()
 ```
+
+The frame state receives the same resource reference:
+
+```python
+@app.on("work")
+async def work(state: State) -> Frame:
+    service = state.get("service", Service)
+    return Frame(route="done", payload=await service.run())
+```
+
+Values written to a frame `State` are local to that frame and are not copied back to `app.state`.
 
 ## Middleware
 
@@ -220,7 +226,7 @@ Register middleware with a decorator, a method, or the constructor.
 @app.middleware
 async def log_frames(
     frame: Frame,
-    context: WaveFrameContext,
+    state: State,
     call_next,
 ) -> Frame | None:
     print(f"route={frame.route!r}, size={len(frame.payload)}")
@@ -235,11 +241,11 @@ Short-circuit a handler:
 @app.middleware
 async def require_login(
     frame: Frame,
-    context: WaveFrameContext,
+    state: State,
     call_next,
 ) -> Frame | None:
     if frame.route != "login":
-        context.get("user_id", str)
+        state.get("user_id", str)
     return await call_next()
 ```
 
@@ -249,7 +255,7 @@ Replace a handler response:
 @app.middleware
 async def replace_response(
     frame: Frame,
-    context: WaveFrameContext,
+    state: State,
     call_next,
 ) -> Frame | None:
     await call_next()
@@ -273,7 +279,7 @@ An exception handler may request these values:
 
 ```text
 payload: bytes
-context: WaveFrameContext
+state: State
 sender: FrameSender
 error: Exception
 ```
@@ -286,7 +292,7 @@ All exception handler injections:
 @app.exception_handler(UnknownRouteError)
 async def unknown_route(
     payload: bytes,
-    context: WaveFrameContext,
+    state: State,
     sender: FrameSender,
     error: Exception,
 ) -> Frame | None:
@@ -341,10 +347,11 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: WaveFrame) -> AsyncIterator[None]:
     resource = await open_resource()
+    app.state.set("resource", resource)
     try:
         yield
     finally:
-        await resource.close()
+        await app.state.get("resource", Resource).close()
 
 
 app = WaveFrame(lifespan=lifespan)
@@ -374,4 +381,4 @@ async def process_audio(
     return Frame(route="ack", payload=b"")
 ```
 
-`WaveFrameProvider` exposes `Frame` and `WaveFrameContext` to Dishka request scope.
+`WaveFrameProvider` exposes `Frame` and `State` to Dishka request scope. `setup_dishka()` stores the root container in `app.state`, and opens a Dishka `REQUEST` scope for every incoming frame.

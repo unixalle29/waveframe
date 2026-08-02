@@ -7,10 +7,10 @@ from waveframe._integrations.dishka import (
     setup_dishka,
 )
 from waveframe.app import WaveFrame
-from waveframe.context import WaveFrameContext
 from waveframe.protocol.frame import Frame
 from waveframe.protocol.frame_sender import FrameSender
 from waveframe.routing.router import WaveFrameRouter
+from waveframe.state import State
 
 __all__ = (
     "AsyncioServer",
@@ -18,8 +18,8 @@ __all__ = (
     "Frame",
     "FrameSender",
     "FromDishka",
+    "State",
     "WaveFrame",
-    "WaveFrameContext",
     "WaveFrameProvider",
     "WaveFrameRouter",
     "inject",

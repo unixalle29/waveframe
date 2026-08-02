@@ -1,13 +1,13 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager, nullcontext
 
-from waveframe.context import WaveFrameContext
 from waveframe.exception_handlers.registry import ExceptionHandlersRegistry
 from waveframe.exceptions import ApplicationNotStartedError
 from waveframe.protocol.codec import FrameCodec, StructFrameCodec
 from waveframe.protocol.frame_sender import FrameSender
 from waveframe.routing.dispatcher import FrameDispatcher
 from waveframe.routing.router import WaveFrameRouter
+from waveframe.state import State
 from waveframe.transport import Read, Write
 from waveframe.types import (
     ExceptionHandler,
@@ -21,14 +21,13 @@ from waveframe.types import (
 class WaveFrame:
     def __init__(
         self,
-        context_factory: Callable[[], WaveFrameContext] = WaveFrameContext,
         lifespan: WaveFrameLifespan | None = None,
         exception_handlers_registry: ExceptionHandlersRegistry | None = None,
         middleware: Sequence[FrameMiddleware] | None = None,
         codec: FrameCodec | None = None,
     ) -> None:
         self.router = WaveFrameRouter()
-        self._context_factory = context_factory
+        self.state = State()
         self._frame_middleware = list(middleware or [])
         self._exception_handlers_registry = exception_handlers_registry or ExceptionHandlersRegistry()
         self._codec = codec or StructFrameCodec()
@@ -74,6 +73,7 @@ class WaveFrame:
         return decorator
 
     async def __call__(self, read: Read, write: Write) -> None:
-        context, sender = self._context_factory(), FrameSender(self._codec, write)
+        sender = FrameSender(self._codec, write)
         while frame := await self._codec.decode(read):
-            await self._dispatcher.dispatch(frame, context, sender)
+            state = self.state.copy()
+            await self._dispatcher.dispatch(frame, state, sender)

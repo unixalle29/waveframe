@@ -1,6 +1,7 @@
 from struct import calcsize, pack, unpack
 from typing import Protocol
 
+from waveframe.exceptions import UnsupportedFrameRouteError
 from waveframe.protocol.frame import Frame
 from waveframe.transport import Read
 
@@ -18,7 +19,7 @@ class StructFrameCodec:
 
     def encode(self, frame: Frame) -> bytes:
         if not isinstance(frame.route, int):
-            raise TypeError("StructFrameCodec supports only integer routes")
+            raise UnsupportedFrameRouteError(type(frame.route))
         header = pack(self._header_format, frame.route, len(frame.payload))
         return header + frame.payload
 

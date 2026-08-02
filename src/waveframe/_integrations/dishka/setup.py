@@ -5,4 +5,5 @@ from waveframe.app import WaveFrame
 
 
 def setup_dishka(container: AsyncContainer, app: WaveFrame) -> None:
+    app.state.set("dishka_container", container)
     app.add_middleware(DishkaMiddleware(container))

@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 
-from waveframe.context import WaveFrameContext
 from waveframe.exception_handlers.registry import ExceptionHandlersRegistry
 from waveframe.exceptions import InvalidHandlerResponseError
 from waveframe.middleware.frame_pipeline import build_frame_pipeline
 from waveframe.protocol.frame import Frame
 from waveframe.protocol.frame_sender import FrameSender
 from waveframe.routing.router import WaveFrameRouter
+from waveframe.state import State
 from waveframe.types import FrameMiddleware
 
 
@@ -21,16 +21,17 @@ class FrameDispatcher:
         self._middleware = middleware
         self._exception_handlers_registry = exception_handlers_registry
 
-    async def dispatch(self, frame: Frame, context: WaveFrameContext, sender: FrameSender) -> None:
+    async def dispatch(self, frame: Frame, state: State, sender: FrameSender) -> None:
         async def endpoint() -> Frame | None:
-            return await self._router.dispatch(frame=frame, context=context, sender=sender)
+            route = self._router.get_route(frame)
+            return await route.handle(frame, state, sender)
 
         try:
-            pipeline = build_frame_pipeline(self._middleware, frame, context, endpoint)
+            pipeline = build_frame_pipeline(self._middleware, frame, state, endpoint)
             response = await pipeline()
         except Exception as error:
             exception_response = await self._exception_handlers_registry.handle(
-                frame=frame, context=context, sender=sender, error=error
+                frame=frame, state=state, sender=sender, error=error
             )
             if exception_response is False:
                 raise

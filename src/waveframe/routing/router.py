@@ -1,9 +1,7 @@
 from collections.abc import Callable
 
-from waveframe.context import WaveFrameContext
 from waveframe.exceptions import DuplicateRouteError, UnknownRouteError
 from waveframe.protocol.frame import Frame
-from waveframe.protocol.frame_sender import FrameSender
 from waveframe.routing.route import Route
 from waveframe.types import FrameHandler, RouteKey
 
@@ -34,8 +32,8 @@ class WaveFrameRouter:
     def routes(self) -> dict[RouteKey, Route]:
         return self._routes.copy()
 
-    async def dispatch(self, frame: Frame, context: WaveFrameContext, sender: FrameSender) -> Frame | None:
+    def get_route(self, frame: Frame) -> Route:
         route = self._routes.get(frame.route)
         if route is None:
             raise UnknownRouteError(frame.route)
-        return await route.handle(frame=frame, context=context, sender=sender)
+        return route
