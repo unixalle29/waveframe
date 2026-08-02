@@ -1,6 +1,6 @@
 from waveframe.protocol.codec import FrameCodec
 from waveframe.protocol.frame import Frame
-from waveframe.types import Write
+from waveframe.transport import Write
 
 
 class FrameSender:

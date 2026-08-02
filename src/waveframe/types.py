@@ -3,12 +3,11 @@ from typing import Any, Protocol
 
 from waveframe.context import WaveFrameContext
 from waveframe.protocol.frame import Frame
+from waveframe.transport import Read, Write
 
 FrameHandler = Callable[..., Awaitable[Frame | None]]
 ExceptionHandler = Callable[..., Awaitable[Frame | None]]
 FrameNext = Callable[[], Awaitable[Frame | None]]
-Read = Callable[[int], Awaitable[bytes | None]]
-Write = Callable[[bytes], Awaitable[None]]
 WaveFrameLifespan = Callable[[], Any]
 RouteKey = Hashable
 

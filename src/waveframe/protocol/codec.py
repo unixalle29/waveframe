@@ -2,7 +2,7 @@ from struct import calcsize, pack, unpack
 from typing import Protocol
 
 from waveframe.protocol.frame import Frame
-from waveframe.types import Read
+from waveframe.transport import Read
 
 
 class FrameCodec(Protocol):
