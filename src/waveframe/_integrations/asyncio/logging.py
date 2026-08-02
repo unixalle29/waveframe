@@ -22,7 +22,7 @@ class DefaultFormatter(logging.Formatter):
         if self._use_colors:
             color = self._LEVEL_COLORS.get(record.levelno, "")
             level_name = f"{color}{level_name}{self._RESET}"
-        record.levelprefix = f"{level_name:<14}"
+        record.levelprefix = f"{level_name:<10}"
         return super().format(record)
 
 
