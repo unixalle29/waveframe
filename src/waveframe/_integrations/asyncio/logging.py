@@ -18,11 +18,11 @@ class DefaultFormatter(logging.Formatter):
         self._use_colors = sys.stderr.isatty()
 
     def format(self, record: logging.LogRecord) -> str:
-        level_name = f"{record.levelname}:"
+        level_name = f"{record.levelname}:".ljust(10)
         if self._use_colors:
             color = self._LEVEL_COLORS.get(record.levelno, "")
             level_name = f"{color}{level_name}{self._RESET}"
-        record.levelprefix = f"{level_name:<10}"
+        record.levelprefix = level_name
         return super().format(record)
 
 
