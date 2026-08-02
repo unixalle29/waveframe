@@ -3,6 +3,7 @@ from asyncio import CancelledError, run, start_server
 from os import getpid
 
 from waveframe._integrations.asyncio.connections import Connections
+from waveframe._integrations.asyncio.logging import configure_logging
 from waveframe.types import WaveFrameApplication
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,7 @@ class AsyncioServer:
         self._connections = Connections(app) if connections is None else connections
 
     def run_forever(self, host: str, port: int) -> None:
+        configure_logging()
         run(self.start(host=host, port=port))
 
     async def graceful_shutdown(self) -> None:
