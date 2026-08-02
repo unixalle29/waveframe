@@ -39,7 +39,7 @@ class WaveFrame:
         self._lifespan_context: AbstractAsyncContextManager[None] | None = None
 
     async def on_startup(self) -> None:
-        self._lifespan_context = (self._lifespan or nullcontext)()
+        self._lifespan_context = self._lifespan(self) if self._lifespan is not None else nullcontext()
         await self._lifespan_context.__aenter__()
 
     async def on_shutdown(self) -> None:

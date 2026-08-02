@@ -1,14 +1,17 @@
 from collections.abc import Awaitable, Callable, Hashable
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from waveframe.context import WaveFrameContext
 from waveframe.protocol.frame import Frame
 from waveframe.transport import Read, Write
 
+if TYPE_CHECKING:
+    from waveframe.app import WaveFrame
+
 FrameHandler = Callable[..., Awaitable[Frame | None]]
 ExceptionHandler = Callable[..., Awaitable[Frame | None]]
 FrameNext = Callable[[], Awaitable[Frame | None]]
-WaveFrameLifespan = Callable[[], Any]
+WaveFrameLifespan = Callable[["WaveFrame"], Any]
 RouteKey = Hashable
 
 

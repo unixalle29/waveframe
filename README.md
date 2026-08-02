@@ -339,7 +339,7 @@ from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
-async def lifespan() -> AsyncIterator[None]:
+async def lifespan(app: WaveFrame) -> AsyncIterator[None]:
     resource = await open_resource()
     try:
         yield
