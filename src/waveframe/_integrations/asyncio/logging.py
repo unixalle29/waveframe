@@ -27,6 +27,12 @@ class DefaultFormatter(logging.Formatter):
 
 
 def configure_logging() -> None:
+    logger = logging.getLogger("waveframe._integrations.asyncio")
+    if logger.handlers:
+        return
+
     handler = logging.StreamHandler()
     handler.setFormatter(DefaultFormatter())
-    logging.basicConfig(level=logging.INFO, handlers=[handler])
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
